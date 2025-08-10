@@ -36,13 +36,32 @@ class AppDatabase extends _$AppDatabase {
 /// ========== Novel DAO ==========
 @DriftAccessor(tables: [Novels])
 class NovelDao extends DatabaseAccessor<AppDatabase> with _$NovelDaoMixin {
-  NovelDao(AppDatabase db) : super(db);
+  NovelDao(super.db);
 
   /// 新增小說:回傳新插入資料的 id
   Future<int> insertNovel(NovelsCompanion novel) => into(novels).insert(novel);
 
   /// 取得全部小說
   Future<List<Novel>> getAllNovels() => select(novels).get();
+
+  /// 取得所有小說（依最後活動時間排序）
+  Stream<List<Novel>> getNovelsSorted() {
+    return (select(novels)
+          ..orderBy([
+            (t) => OrderingTerm(expression: t.lastActivityAt, mode: OrderingMode.desc),
+            (t) => OrderingTerm(expression: t.createdAt, mode: OrderingMode.desc),
+          ]))
+        .watch();
+  }
+
+  /// 修改小說的最後活動時間
+  /// 用於紀錄最近一次閱讀或操作的時間
+  Future<void> touchLastActivity(int id) async {
+    await (update(novels)..where((t) => t.id.equals(id))).write(
+      NovelsCompanion(lastActivityAt: Value(DateTime.now())),
+    );
+    logger.i('更新小說 $id 的最後活動時間');
+  }
 
   /// 依 id 取得單一小說
   Future<Novel?> getNovelById(int id) =>
@@ -74,6 +93,7 @@ class NovelDao extends DatabaseAccessor<AppDatabase> with _$NovelDaoMixin {
   /// 更新小說：回傳影響筆數
   Future<int> updateNovel(NovelsCompanion novel) {
     assert(novel.id.present, 'updateNovel 需要提供 id（Value(id)）');
+    touchLastActivity(novel.id.value);
     return (update(novels)..where((t) => t.id.equals(novel.id.value))).write(novel);
   }
 
@@ -91,7 +111,7 @@ class NovelDao extends DatabaseAccessor<AppDatabase> with _$NovelDaoMixin {
 
     // 取副檔名
     final ext = p.extension(sourceImage.path).toLowerCase();
-    final fileName = '$novelId$ext'; // 或用 uuid
+    final fileName = '$novelId$ext'; 
     final destPath = p.join(coverDir.path, fileName);
 
     // 覆蓋舊檔
@@ -105,7 +125,7 @@ class NovelDao extends DatabaseAccessor<AppDatabase> with _$NovelDaoMixin {
 /// ========== Chapter DAO ==========
 @DriftAccessor(tables: [Chapters, Novels])
 class ChapterDao extends DatabaseAccessor<AppDatabase> with _$ChapterDaoMixin {
-  ChapterDao(AppDatabase db) : super(db);
+  ChapterDao(super.db);
 
   /// 新增章節：回傳新插入資料的 id
   Future<int> insertChapter(ChaptersCompanion chapter) =>

@@ -1,20 +1,19 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../database/app_database.dart';
-import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
 class NovelCard extends StatelessWidget {
   final Novel novel;
   final VoidCallback? onTap;
-  const NovelCard({super.key, required this.novel, this.onTap});
+  final VoidCallback? onLongPress;
+
+  const NovelCard({super.key, required this.novel, this.onTap, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat('yyyy/MM/dd HH:mm');
-    final created = df.format(novel.createdAt);
-
+    
     Widget cover = _placeholder();
 
     if ((novel.coverPath ?? '').isNotEmpty) {
@@ -22,7 +21,17 @@ class NovelCard extends StatelessWidget {
         future: _getAbsoluteCoverPath(novel.coverPath!),
         builder: (context, snapshot) {
           if (snapshot.hasData && File(snapshot.data!).existsSync()) {
-            return Image.file(File(snapshot.data!), fit: BoxFit.cover);
+            return ClipRect(
+              child: Align(
+                alignment: Alignment.center,
+                child: Image.file(
+                  File(snapshot.data!),
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
+            );
           }
           return _placeholder();
         },
@@ -31,6 +40,7 @@ class NovelCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
+      onLongPress: onLongPress,
       borderRadius: BorderRadius.circular(16),
       child: Card(
         elevation: 2,
@@ -57,19 +67,10 @@ class NovelCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    (novel.author.isEmpty) ? '作者未填' : novel.author,
+                    (novel.author.isEmpty) ? '未知' : novel.author,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.schedule, size: 14),
-                      const SizedBox(width: 4),
-                      Text(created, style: Theme.of(context).textTheme.bodySmall),
-                    ],
                   ),
                 ],
               ),

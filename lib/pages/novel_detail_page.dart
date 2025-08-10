@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../database/app_database.dart';
 import 'reader_page.dart';
+import 'dart:async';
 
 class NovelDetailPage extends StatelessWidget {
   final Novel novel; 
@@ -31,16 +32,12 @@ class NovelDetailPage extends StatelessWidget {
                 title: Text(chapter.title, style: const TextStyle(fontSize: 16)),
                 trailing: const Icon(Icons.menu_book_outlined),
                 onTap: () {
+                  unawaited(db.novelDao.touchLastActivity(novel.id));
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => ReaderPage(
-                        novel: novel,
-                        chapter: chapter,
-                      ),
-                    ),
+                    MaterialPageRoute(builder: (_) => ReaderPage(novel: novel, chapter: chapter)),
                   );
-                },
+                }
               );
             },
           );

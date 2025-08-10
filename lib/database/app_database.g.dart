@@ -52,6 +52,19 @@ class $NovelsTable extends Novels with TableInfo<$NovelsTable, Novel> {
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _lastActivityAtMeta = const VerificationMeta(
+    'lastActivityAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastActivityAt =
+      GeneratedColumn<DateTime>(
+        'last_activity_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+        defaultValue: currentDateAndTime,
+      );
   static const VerificationMeta _coverPathMeta = const VerificationMeta(
     'coverPath',
   );
@@ -69,6 +82,7 @@ class $NovelsTable extends Novels with TableInfo<$NovelsTable, Novel> {
     title,
     author,
     createdAt,
+    lastActivityAt,
     coverPath,
   ];
   @override
@@ -106,6 +120,15 @@ class $NovelsTable extends Novels with TableInfo<$NovelsTable, Novel> {
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('last_activity_at')) {
+      context.handle(
+        _lastActivityAtMeta,
+        lastActivityAt.isAcceptableOrUnknown(
+          data['last_activity_at']!,
+          _lastActivityAtMeta,
+        ),
+      );
+    }
     if (data.containsKey('cover_path')) {
       context.handle(
         _coverPathMeta,
@@ -137,6 +160,10 @@ class $NovelsTable extends Novels with TableInfo<$NovelsTable, Novel> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      lastActivityAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_activity_at'],
+      )!,
       coverPath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}cover_path'],
@@ -155,12 +182,14 @@ class Novel extends DataClass implements Insertable<Novel> {
   final String title;
   final String author;
   final DateTime createdAt;
+  final DateTime lastActivityAt;
   final String? coverPath;
   const Novel({
     required this.id,
     required this.title,
     required this.author,
     required this.createdAt,
+    required this.lastActivityAt,
     this.coverPath,
   });
   @override
@@ -170,6 +199,7 @@ class Novel extends DataClass implements Insertable<Novel> {
     map['title'] = Variable<String>(title);
     map['author'] = Variable<String>(author);
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['last_activity_at'] = Variable<DateTime>(lastActivityAt);
     if (!nullToAbsent || coverPath != null) {
       map['cover_path'] = Variable<String>(coverPath);
     }
@@ -182,6 +212,7 @@ class Novel extends DataClass implements Insertable<Novel> {
       title: Value(title),
       author: Value(author),
       createdAt: Value(createdAt),
+      lastActivityAt: Value(lastActivityAt),
       coverPath: coverPath == null && nullToAbsent
           ? const Value.absent()
           : Value(coverPath),
@@ -198,6 +229,7 @@ class Novel extends DataClass implements Insertable<Novel> {
       title: serializer.fromJson<String>(json['title']),
       author: serializer.fromJson<String>(json['author']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastActivityAt: serializer.fromJson<DateTime>(json['lastActivityAt']),
       coverPath: serializer.fromJson<String?>(json['coverPath']),
     );
   }
@@ -209,6 +241,7 @@ class Novel extends DataClass implements Insertable<Novel> {
       'title': serializer.toJson<String>(title),
       'author': serializer.toJson<String>(author),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastActivityAt': serializer.toJson<DateTime>(lastActivityAt),
       'coverPath': serializer.toJson<String?>(coverPath),
     };
   }
@@ -218,12 +251,14 @@ class Novel extends DataClass implements Insertable<Novel> {
     String? title,
     String? author,
     DateTime? createdAt,
+    DateTime? lastActivityAt,
     Value<String?> coverPath = const Value.absent(),
   }) => Novel(
     id: id ?? this.id,
     title: title ?? this.title,
     author: author ?? this.author,
     createdAt: createdAt ?? this.createdAt,
+    lastActivityAt: lastActivityAt ?? this.lastActivityAt,
     coverPath: coverPath.present ? coverPath.value : this.coverPath,
   );
   Novel copyWithCompanion(NovelsCompanion data) {
@@ -232,6 +267,9 @@ class Novel extends DataClass implements Insertable<Novel> {
       title: data.title.present ? data.title.value : this.title,
       author: data.author.present ? data.author.value : this.author,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastActivityAt: data.lastActivityAt.present
+          ? data.lastActivityAt.value
+          : this.lastActivityAt,
       coverPath: data.coverPath.present ? data.coverPath.value : this.coverPath,
     );
   }
@@ -243,13 +281,15 @@ class Novel extends DataClass implements Insertable<Novel> {
           ..write('title: $title, ')
           ..write('author: $author, ')
           ..write('createdAt: $createdAt, ')
+          ..write('lastActivityAt: $lastActivityAt, ')
           ..write('coverPath: $coverPath')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, title, author, createdAt, coverPath);
+  int get hashCode =>
+      Object.hash(id, title, author, createdAt, lastActivityAt, coverPath);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -258,6 +298,7 @@ class Novel extends DataClass implements Insertable<Novel> {
           other.title == this.title &&
           other.author == this.author &&
           other.createdAt == this.createdAt &&
+          other.lastActivityAt == this.lastActivityAt &&
           other.coverPath == this.coverPath);
 }
 
@@ -266,12 +307,14 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
   final Value<String> title;
   final Value<String> author;
   final Value<DateTime> createdAt;
+  final Value<DateTime> lastActivityAt;
   final Value<String?> coverPath;
   const NovelsCompanion({
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.author = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.lastActivityAt = const Value.absent(),
     this.coverPath = const Value.absent(),
   });
   NovelsCompanion.insert({
@@ -279,6 +322,7 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
     required String title,
     this.author = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.lastActivityAt = const Value.absent(),
     this.coverPath = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Novel> custom({
@@ -286,6 +330,7 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
     Expression<String>? title,
     Expression<String>? author,
     Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastActivityAt,
     Expression<String>? coverPath,
   }) {
     return RawValuesInsertable({
@@ -293,6 +338,7 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
       if (title != null) 'title': title,
       if (author != null) 'author': author,
       if (createdAt != null) 'created_at': createdAt,
+      if (lastActivityAt != null) 'last_activity_at': lastActivityAt,
       if (coverPath != null) 'cover_path': coverPath,
     });
   }
@@ -302,6 +348,7 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
     Value<String>? title,
     Value<String>? author,
     Value<DateTime>? createdAt,
+    Value<DateTime>? lastActivityAt,
     Value<String?>? coverPath,
   }) {
     return NovelsCompanion(
@@ -309,6 +356,7 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
       title: title ?? this.title,
       author: author ?? this.author,
       createdAt: createdAt ?? this.createdAt,
+      lastActivityAt: lastActivityAt ?? this.lastActivityAt,
       coverPath: coverPath ?? this.coverPath,
     );
   }
@@ -328,6 +376,9 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (lastActivityAt.present) {
+      map['last_activity_at'] = Variable<DateTime>(lastActivityAt.value);
+    }
     if (coverPath.present) {
       map['cover_path'] = Variable<String>(coverPath.value);
     }
@@ -341,6 +392,7 @@ class NovelsCompanion extends UpdateCompanion<Novel> {
           ..write('title: $title, ')
           ..write('author: $author, ')
           ..write('createdAt: $createdAt, ')
+          ..write('lastActivityAt: $lastActivityAt, ')
           ..write('coverPath: $coverPath')
           ..write(')'))
         .toString();
@@ -719,6 +771,7 @@ typedef $$NovelsTableCreateCompanionBuilder =
       required String title,
       Value<String> author,
       Value<DateTime> createdAt,
+      Value<DateTime> lastActivityAt,
       Value<String?> coverPath,
     });
 typedef $$NovelsTableUpdateCompanionBuilder =
@@ -727,6 +780,7 @@ typedef $$NovelsTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> author,
       Value<DateTime> createdAt,
+      Value<DateTime> lastActivityAt,
       Value<String?> coverPath,
     });
 
@@ -780,6 +834,11 @@ class $$NovelsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastActivityAt => $composableBuilder(
+    column: $table.lastActivityAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -843,6 +902,11 @@ class $$NovelsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get lastActivityAt => $composableBuilder(
+    column: $table.lastActivityAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get coverPath => $composableBuilder(
     column: $table.coverPath,
     builder: (column) => ColumnOrderings(column),
@@ -869,6 +933,11 @@ class $$NovelsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastActivityAt => $composableBuilder(
+    column: $table.lastActivityAt,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get coverPath =>
       $composableBuilder(column: $table.coverPath, builder: (column) => column);
@@ -931,12 +1000,14 @@ class $$NovelsTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> author = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> lastActivityAt = const Value.absent(),
                 Value<String?> coverPath = const Value.absent(),
               }) => NovelsCompanion(
                 id: id,
                 title: title,
                 author: author,
                 createdAt: createdAt,
+                lastActivityAt: lastActivityAt,
                 coverPath: coverPath,
               ),
           createCompanionCallback:
@@ -945,12 +1016,14 @@ class $$NovelsTableTableManager
                 required String title,
                 Value<String> author = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> lastActivityAt = const Value.absent(),
                 Value<String?> coverPath = const Value.absent(),
               }) => NovelsCompanion.insert(
                 id: id,
                 title: title,
                 author: author,
                 createdAt: createdAt,
+                lastActivityAt: lastActivityAt,
                 coverPath: coverPath,
               ),
           withReferenceMapper: (p0) => p0

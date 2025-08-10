@@ -6,7 +6,8 @@ import '../database/app_database.dart';
 
 class AddNovelPage extends StatefulWidget {
   final AppDatabase db;
-  const AddNovelPage({super.key, required this.db});
+  final Novel? original;
+  const AddNovelPage({super.key, required this.db, this.original});
 
   @override
   State<AddNovelPage> createState() => _AddNovelPageState();
@@ -17,6 +18,17 @@ class _AddNovelPageState extends State<AddNovelPage> {
   final _authorCtrl = TextEditingController();
   File? _pickedCover;
   bool _saving = false;
+
+  bool get isEdit => widget.original != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEdit) {
+      _titleCtrl.text = widget.original!.title;
+      _authorCtrl.text = widget.original!.author;
+    }
+  }
 
   @override
   void dispose() {
@@ -43,12 +55,25 @@ class _AddNovelPageState extends State<AddNovelPage> {
 
     setState(() => _saving = true);
     try {
-      final novelId = await widget.db.novelDao.insertNovel(
-        NovelsCompanion.insert(
-          title: title,
-          author: Value(author.isEmpty ? '' : author),
-        ),
-      );
+      int novelId;
+      if (!isEdit) {
+        novelId = await widget.db.novelDao.insertNovel(
+          NovelsCompanion.insert(
+            title: title,
+            author: Value(author.isEmpty ? '' : author),
+            createdAt: Value(DateTime.now()),
+          ),
+        );
+      } else {
+        novelId = widget.original!.id;
+        await widget.db.novelDao.updateNovel(
+          NovelsCompanion(
+            id: Value(novelId),
+            title: Value(title),
+            author: Value(author.isEmpty ? '' : author),
+          ),
+        );
+      }
 
       if (_pickedCover != null) {
         final relativePath = await widget.db.novelDao.saveCoverForNovel(
@@ -75,12 +100,12 @@ class _AddNovelPageState extends State<AddNovelPage> {
 
   @override
   Widget build(BuildContext context) {
-    final coverName = _pickedCover == null
-        ? '尚未選擇'
-        : _pickedCover!.path.split(Platform.pathSeparator).last;
+    final coverName = _pickedCover != null
+        ? _pickedCover!.path.split(Platform.pathSeparator).last
+        : (isEdit && (widget.original!.coverPath ?? '').isNotEmpty ? '已設定封面' : '尚未選擇');
 
     return Scaffold(
-      appBar: AppBar(title: const Text('新增小說')),
+      appBar: AppBar(title: Text(isEdit ? '編輯小說' : '新增小說')),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -110,7 +135,7 @@ class _AddNovelPageState extends State<AddNovelPage> {
                     ElevatedButton.icon(
                       onPressed: _saving ? null : _pickCover,
                       icon: const Icon(Icons.image_outlined),
-                      label: const Text('選擇封面'),
+                      label: Text(isEdit ? '更換封面' : '選擇封面'),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -131,7 +156,7 @@ class _AddNovelPageState extends State<AddNovelPage> {
                           width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save_outlined),
-                  label: const Text('儲存'),
+                  label: Text(isEdit ? '儲存變更' : '儲存'),
                 ),
               ],
             ),
