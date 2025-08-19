@@ -2,12 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:drift/drift.dart' show Value;
+import 'package:provider/provider.dart';
 import '../database/app_database.dart';
 
 class AddNovelPage extends StatefulWidget {
-  final AppDatabase db;
   final Novel? original;
-  const AddNovelPage({super.key, required this.db, this.original});
+  const AddNovelPage({super.key, this.original});
 
   @override
   State<AddNovelPage> createState() => _AddNovelPageState();
@@ -45,6 +45,7 @@ class _AddNovelPageState extends State<AddNovelPage> {
   }
 
   Future<void> _save() async {
+    final db = context.read<AppDatabase>();
     final title = _titleCtrl.text.trim();
     final author = _authorCtrl.text.trim();
 
@@ -57,16 +58,15 @@ class _AddNovelPageState extends State<AddNovelPage> {
     try {
       int novelId;
       if (!isEdit) {
-        novelId = await widget.db.novelDao.insertNovel(
+        novelId = await db.novelDao.insertNovel(
           NovelsCompanion.insert(
             title: title,
             author: Value(author.isEmpty ? '' : author),
-            createdAt: Value(DateTime.now()),
           ),
         );
       } else {
         novelId = widget.original!.id;
-        await widget.db.novelDao.updateNovel(
+        await db.novelDao.updateNovel(
           NovelsCompanion(
             id: Value(novelId),
             title: Value(title),
@@ -76,11 +76,11 @@ class _AddNovelPageState extends State<AddNovelPage> {
       }
 
       if (_pickedCover != null) {
-        final relativePath = await widget.db.novelDao.saveCoverForNovel(
+        final relativePath = await db.novelDao.saveCoverForNovel(
           sourceImage: _pickedCover!,
           novelId: novelId,
         );
-        await widget.db.novelDao.updateNovel(
+        await db.novelDao.updateNovel(
           NovelsCompanion(
             id: Value(novelId),
             coverPath: Value(relativePath),

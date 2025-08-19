@@ -22,12 +22,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    db = AppDatabase();
+    db = context.read<AppDatabase>();
   }
 
   @override
   void dispose() {
-    db.close();
     super.dispose();
   }
 
@@ -140,7 +139,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Novel>>(
-      stream: db.novelDao.getNovelsSorted(),
+      stream: db.novelDao.watchNovelsSorted(),
       builder: (context, snapshot) {
         final hasError = snapshot.hasError;
         final loading = !snapshot.hasData;
@@ -200,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                                         } else if (v == 'edit') {
                                           await Navigator.push(
                                             context,
-                                            MaterialPageRoute(builder: (_) => AddNovelPage(db: db, original: novel)),
+                                            MaterialPageRoute(builder: (_) => AddNovelPage(original: novel)),
                                           );
                                         }
                                       },
@@ -243,11 +242,10 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.add),
                   label: const Text("新增小說"),
                   onPressed: () async {
-                    final created = await Navigator.push<bool>(
+                    await Navigator.push<bool>(
                       context,
-                      MaterialPageRoute(builder: (_) => AddNovelPage(db: db)),
+                      MaterialPageRoute(builder: (_) => AddNovelPage()),
                     );
-                    if (created == true) setState(() {});
                   },
                 )
               : null,

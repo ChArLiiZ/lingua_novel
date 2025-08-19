@@ -6,5 +6,7 @@ class Chapters extends Table {
   IntColumn get novelId => integer().references(Novels, #id, onDelete: KeyAction.cascade)();
   TextColumn get title => text()();
   TextColumn get content => text()();
-  IntColumn get order => integer()();
+  IntColumn get sortIndex => integer()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().nullable()();
 }
