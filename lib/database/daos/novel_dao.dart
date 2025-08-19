@@ -17,7 +17,6 @@ class NovelDao extends DatabaseAccessor<AppDatabase> with _$NovelDaoMixin {
   Future<List<Novel>> getAllNovels() => select(novels).get();
 
 
-  // 改成 watch 版本且名稱對應
   Stream<List<Novel>> watchNovelsSorted() {
     return (select(novels)
           ..orderBy([

@@ -451,6 +451,18 @@ class $ChaptersTable extends Chapters with TableInfo<$ChaptersTable, Chapter> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _translatedContentMeta = const VerificationMeta(
+    'translatedContent',
+  );
+  @override
+  late final GeneratedColumn<String> translatedContent =
+      GeneratedColumn<String>(
+        'translated_content',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _sortIndexMeta = const VerificationMeta(
     'sortIndex',
   );
@@ -491,6 +503,7 @@ class $ChaptersTable extends Chapters with TableInfo<$ChaptersTable, Chapter> {
     novelId,
     title,
     content,
+    translatedContent,
     sortIndex,
     createdAt,
     updatedAt,
@@ -533,6 +546,15 @@ class $ChaptersTable extends Chapters with TableInfo<$ChaptersTable, Chapter> {
       );
     } else if (isInserting) {
       context.missing(_contentMeta);
+    }
+    if (data.containsKey('translated_content')) {
+      context.handle(
+        _translatedContentMeta,
+        translatedContent.isAcceptableOrUnknown(
+          data['translated_content']!,
+          _translatedContentMeta,
+        ),
+      );
     }
     if (data.containsKey('sort_index')) {
       context.handle(
@@ -579,6 +601,10 @@ class $ChaptersTable extends Chapters with TableInfo<$ChaptersTable, Chapter> {
         DriftSqlType.string,
         data['${effectivePrefix}content'],
       )!,
+      translatedContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}translated_content'],
+      ),
       sortIndex: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sort_index'],
@@ -605,6 +631,7 @@ class Chapter extends DataClass implements Insertable<Chapter> {
   final int novelId;
   final String title;
   final String content;
+  final String? translatedContent;
   final int sortIndex;
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -613,6 +640,7 @@ class Chapter extends DataClass implements Insertable<Chapter> {
     required this.novelId,
     required this.title,
     required this.content,
+    this.translatedContent,
     required this.sortIndex,
     required this.createdAt,
     this.updatedAt,
@@ -624,6 +652,9 @@ class Chapter extends DataClass implements Insertable<Chapter> {
     map['novel_id'] = Variable<int>(novelId);
     map['title'] = Variable<String>(title);
     map['content'] = Variable<String>(content);
+    if (!nullToAbsent || translatedContent != null) {
+      map['translated_content'] = Variable<String>(translatedContent);
+    }
     map['sort_index'] = Variable<int>(sortIndex);
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || updatedAt != null) {
@@ -638,6 +669,9 @@ class Chapter extends DataClass implements Insertable<Chapter> {
       novelId: Value(novelId),
       title: Value(title),
       content: Value(content),
+      translatedContent: translatedContent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(translatedContent),
       sortIndex: Value(sortIndex),
       createdAt: Value(createdAt),
       updatedAt: updatedAt == null && nullToAbsent
@@ -656,6 +690,9 @@ class Chapter extends DataClass implements Insertable<Chapter> {
       novelId: serializer.fromJson<int>(json['novelId']),
       title: serializer.fromJson<String>(json['title']),
       content: serializer.fromJson<String>(json['content']),
+      translatedContent: serializer.fromJson<String?>(
+        json['translatedContent'],
+      ),
       sortIndex: serializer.fromJson<int>(json['sortIndex']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
@@ -669,6 +706,7 @@ class Chapter extends DataClass implements Insertable<Chapter> {
       'novelId': serializer.toJson<int>(novelId),
       'title': serializer.toJson<String>(title),
       'content': serializer.toJson<String>(content),
+      'translatedContent': serializer.toJson<String?>(translatedContent),
       'sortIndex': serializer.toJson<int>(sortIndex),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
@@ -680,6 +718,7 @@ class Chapter extends DataClass implements Insertable<Chapter> {
     int? novelId,
     String? title,
     String? content,
+    Value<String?> translatedContent = const Value.absent(),
     int? sortIndex,
     DateTime? createdAt,
     Value<DateTime?> updatedAt = const Value.absent(),
@@ -688,6 +727,9 @@ class Chapter extends DataClass implements Insertable<Chapter> {
     novelId: novelId ?? this.novelId,
     title: title ?? this.title,
     content: content ?? this.content,
+    translatedContent: translatedContent.present
+        ? translatedContent.value
+        : this.translatedContent,
     sortIndex: sortIndex ?? this.sortIndex,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
@@ -698,6 +740,9 @@ class Chapter extends DataClass implements Insertable<Chapter> {
       novelId: data.novelId.present ? data.novelId.value : this.novelId,
       title: data.title.present ? data.title.value : this.title,
       content: data.content.present ? data.content.value : this.content,
+      translatedContent: data.translatedContent.present
+          ? data.translatedContent.value
+          : this.translatedContent,
       sortIndex: data.sortIndex.present ? data.sortIndex.value : this.sortIndex,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
@@ -711,6 +756,7 @@ class Chapter extends DataClass implements Insertable<Chapter> {
           ..write('novelId: $novelId, ')
           ..write('title: $title, ')
           ..write('content: $content, ')
+          ..write('translatedContent: $translatedContent, ')
           ..write('sortIndex: $sortIndex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -719,8 +765,16 @@ class Chapter extends DataClass implements Insertable<Chapter> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, novelId, title, content, sortIndex, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    novelId,
+    title,
+    content,
+    translatedContent,
+    sortIndex,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -729,6 +783,7 @@ class Chapter extends DataClass implements Insertable<Chapter> {
           other.novelId == this.novelId &&
           other.title == this.title &&
           other.content == this.content &&
+          other.translatedContent == this.translatedContent &&
           other.sortIndex == this.sortIndex &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
@@ -739,6 +794,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
   final Value<int> novelId;
   final Value<String> title;
   final Value<String> content;
+  final Value<String?> translatedContent;
   final Value<int> sortIndex;
   final Value<DateTime> createdAt;
   final Value<DateTime?> updatedAt;
@@ -747,6 +803,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
     this.novelId = const Value.absent(),
     this.title = const Value.absent(),
     this.content = const Value.absent(),
+    this.translatedContent = const Value.absent(),
     this.sortIndex = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -756,6 +813,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
     required int novelId,
     required String title,
     required String content,
+    this.translatedContent = const Value.absent(),
     required int sortIndex,
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -768,6 +826,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
     Expression<int>? novelId,
     Expression<String>? title,
     Expression<String>? content,
+    Expression<String>? translatedContent,
     Expression<int>? sortIndex,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
@@ -777,6 +836,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
       if (novelId != null) 'novel_id': novelId,
       if (title != null) 'title': title,
       if (content != null) 'content': content,
+      if (translatedContent != null) 'translated_content': translatedContent,
       if (sortIndex != null) 'sort_index': sortIndex,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -788,6 +848,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
     Value<int>? novelId,
     Value<String>? title,
     Value<String>? content,
+    Value<String?>? translatedContent,
     Value<int>? sortIndex,
     Value<DateTime>? createdAt,
     Value<DateTime?>? updatedAt,
@@ -797,6 +858,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
       novelId: novelId ?? this.novelId,
       title: title ?? this.title,
       content: content ?? this.content,
+      translatedContent: translatedContent ?? this.translatedContent,
       sortIndex: sortIndex ?? this.sortIndex,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -818,6 +880,9 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
     if (content.present) {
       map['content'] = Variable<String>(content.value);
     }
+    if (translatedContent.present) {
+      map['translated_content'] = Variable<String>(translatedContent.value);
+    }
     if (sortIndex.present) {
       map['sort_index'] = Variable<int>(sortIndex.value);
     }
@@ -837,6 +902,7 @@ class ChaptersCompanion extends UpdateCompanion<Chapter> {
           ..write('novelId: $novelId, ')
           ..write('title: $title, ')
           ..write('content: $content, ')
+          ..write('translatedContent: $translatedContent, ')
           ..write('sortIndex: $sortIndex, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -1393,6 +1459,7 @@ typedef $$ChaptersTableCreateCompanionBuilder =
       required int novelId,
       required String title,
       required String content,
+      Value<String?> translatedContent,
       required int sortIndex,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
@@ -1403,6 +1470,7 @@ typedef $$ChaptersTableUpdateCompanionBuilder =
       Value<int> novelId,
       Value<String> title,
       Value<String> content,
+      Value<String?> translatedContent,
       Value<int> sortIndex,
       Value<DateTime> createdAt,
       Value<DateTime?> updatedAt,
@@ -1452,6 +1520,11 @@ class $$ChaptersTableFilterComposer
 
   ColumnFilters<String> get content => $composableBuilder(
     column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get translatedContent => $composableBuilder(
+    column: $table.translatedContent,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1518,6 +1591,11 @@ class $$ChaptersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get translatedContent => $composableBuilder(
+    column: $table.translatedContent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get sortIndex => $composableBuilder(
     column: $table.sortIndex,
     builder: (column) => ColumnOrderings(column),
@@ -1574,6 +1652,11 @@ class $$ChaptersTableAnnotationComposer
 
   GeneratedColumn<String> get content =>
       $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get translatedContent => $composableBuilder(
+    column: $table.translatedContent,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get sortIndex =>
       $composableBuilder(column: $table.sortIndex, builder: (column) => column);
@@ -1640,6 +1723,7 @@ class $$ChaptersTableTableManager
                 Value<int> novelId = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> content = const Value.absent(),
+                Value<String?> translatedContent = const Value.absent(),
                 Value<int> sortIndex = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
@@ -1648,6 +1732,7 @@ class $$ChaptersTableTableManager
                 novelId: novelId,
                 title: title,
                 content: content,
+                translatedContent: translatedContent,
                 sortIndex: sortIndex,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
@@ -1658,6 +1743,7 @@ class $$ChaptersTableTableManager
                 required int novelId,
                 required String title,
                 required String content,
+                Value<String?> translatedContent = const Value.absent(),
                 required int sortIndex,
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
@@ -1666,6 +1752,7 @@ class $$ChaptersTableTableManager
                 novelId: novelId,
                 title: title,
                 content: content,
+                translatedContent: translatedContent,
                 sortIndex: sortIndex,
                 createdAt: createdAt,
                 updatedAt: updatedAt,

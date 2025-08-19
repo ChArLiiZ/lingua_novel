@@ -5,7 +5,7 @@ import 'reader_page.dart';
 import 'chapter_editor_page.dart';
 
 class NovelDetailPage extends StatelessWidget {
-  final Novel novel; 
+  final Novel novel;
   final AppDatabase db;
   const NovelDetailPage({super.key, required this.novel, required this.db});
 
@@ -45,6 +45,7 @@ class NovelDetailPage extends StatelessWidget {
                           ),
                         ),
                       );
+                      if (!context.mounted) return;
                     } else if (v == 'delete') {
                       final ok = await showDialog<bool>(
                         context: context,
@@ -52,11 +53,20 @@ class NovelDetailPage extends StatelessWidget {
                           title: const Text('刪除章節'),
                           content: Text('確定刪除「${c.title}」嗎？'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
-                            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('刪除')),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, false),
+                              child: const Text('取消'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, true),
+                              child: const Text('刪除'),
+                            ),
                           ],
                         ),
                       );
+                      if (!context.mounted) return;
                       if (ok == true) {
                         await db.chapterDao.deleteChapter(c.id);
                         unawaited(db.novelDao.touchLastActivity(novel.id));
@@ -72,7 +82,12 @@ class NovelDetailPage extends StatelessWidget {
                   unawaited(db.novelDao.touchLastActivity(novel.id));
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ReaderPage(novel: novel, chapter: c)),
+                    MaterialPageRoute(
+                      builder: (_) => ReaderPage(
+                        novel: novel,
+                        chapterId: c.id,
+                      ),
+                    ),
                   );
                 },
               );
@@ -88,6 +103,7 @@ class NovelDetailPage extends StatelessWidget {
           unawaited(db.novelDao.touchLastActivity(novel.id));
           final created = await db.chapterDao.getChapterById(id);
           if (created == null) return;
+          if (!context.mounted) return; 
           await Navigator.push(
             context,
             MaterialPageRoute(
