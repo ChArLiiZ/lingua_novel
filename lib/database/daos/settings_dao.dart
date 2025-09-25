@@ -6,7 +6,7 @@ part 'settings_dao.g.dart';
 
 @DriftAccessor(tables: [Settings])
 class SettingsDao extends DatabaseAccessor<AppDatabase> with _$SettingsDaoMixin {
-  SettingsDao(AppDatabase db) : super(db);
+  SettingsDao(super.db);
 
   Future<void> setValue(String key, String value) async {
     into(settings).insertOnConflictUpdate(SettingsCompanion(
